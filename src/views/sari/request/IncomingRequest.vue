@@ -1,6 +1,7 @@
 <script setup>
     import { onMounted, ref } from 'vue';
     import { FilterMatchMode } from 'primevue/api';
+    import { useToast } from 'primevue/usetoast';
 
     import moment from 'moment';
 
@@ -8,9 +9,11 @@
 
     // API
     import {listIncommingRequest, listStatusRequest, listStatus} from '@/api/DataVariable';
+    import RequestService from '@/api/RequestService.js';
 
     // Component
     import DetailRequest from './components/DetailRequest.vue';
+    import ActionsRequest from './components/ActionsRequest.vue';
 
     const request_data = ref([])
     const dialogs = ref(false)
@@ -18,13 +21,18 @@
     const cm = ref();
     const list_status = ref(listStatus);
     const selectedRequest = ref({status:null, id:null});
+    const loadings = ref(false);
     const filters = ref();
     const statusRequest = ref('incoming');
+    const status_tiket = ref();
+    const payload = ref(JSON.parse(localStorage.getItem('payload')));
     const menuModel = ref([
         {label: 'View', icon: 'pi pi-fw pi-search', command: () => {console.log('View')}},
         {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
     ]);
 
+    const toast = useToast();
+    
     onMounted(() => {
         load_data()
     });
@@ -34,42 +42,74 @@
     }
 
     const load_data = async() => {
-        if (statusRequest.value === 'done') {
+        try {
             request_data.value = [];
-            for (let i = 0; i < listIncommingRequest.length; i++) {
-                const status_tiket = list_status.value.find(a => a.id === listIncommingRequest[i].status )
-                if (listIncommingRequest[i].status == 6) {
-                    request_data.value.push({
-                        id:listIncommingRequest[i].id, 
-                        nomor:listIncommingRequest[i].nomor,
-                        status:listIncommingRequest[i].status,
-                        tgl:listIncommingRequest[i].tgl,
-                        nama:listIncommingRequest[i].nama,
-                        jabatan:listIncommingRequest[i].jabatan,
-                        kategori:listIncommingRequest[i].kategori,
-                        keterangan: status_tiket ? status_tiket.name : '',
-                        color: status_tiket ? status_tiket.color : 'gray-900',
-                    })
+            const response = await RequestService.getRequestDept()
+            const load = response.data;
+            const data = load.data
+            if (statusRequest.value === 'done') {
+                for (let i = 0; i < data.length; i++) {
+                    if (Number(data[i].status) == 6) {
+                        request_data.value.push({
+                            id:data[i].id, 
+                            nomor:data[i].no_wo,
+                            status:Number(data[i].status),
+                            keperluan:data[i].keperluan,
+                            info:data[i].info,
+                            nohp:data[i].user.noHP,
+                            tgl:moment(data[i].created_at).format('DD MMM YYYY'),
+                            requestor:data[i].user.name,
+                            jabatan:data[i].user.jabatan,
+                            kategori:data[i].category.nama_kategori,
+                            permintaan:data[i].category.nama_permintaan,
+                            atasan: data[i].atasan.name,
+                        })
+                    }
+                }
+            } else if (statusRequest.value === 'incoming') {
+                for (let i = 0; i < data.length; i++) {
+                    if (Number(data[i].status) == 5 || Number(data[i].status) == 4 || Number(data[i].status) == 3) {
+                        request_data.value.push({
+                            id:data[i].id, 
+                            nomor:data[i].no_wo,
+                            status:Number(data[i].status),
+                            keperluan:data[i].keperluan,
+                            info:data[i].info,
+                            nohp:data[i].user.noHP,
+                            tgl:moment(data[i].created_at).format('DD MMM YYYY'),
+                            requestor:data[i].user.name,
+                            jabatan:data[i].user.jabatan,
+                            kategori:data[i].category.nama_kategori,
+                            permintaan:data[i].category.nama_permintaan,
+                            atasan: data[i].atasan.name,
+                        })
+                    }
+                }
+            } else {
+                for (let i = 0; i < data.length; i++) {
+                    const info = data[i].info.split(' ');
+                    const kondisi = info[0];
+                    if (kondisi == 'Declined') {
+                        request_data.value.push({
+                            id:data[i].id, 
+                            nomor:data[i].no_wo,
+                            status:Number(data[i].status),
+                            keperluan:data[i].keperluan,
+                            info:data[i].info,
+                            nohp:data[i].user.noHP,
+                            tgl:moment(data[i].created_at).format('DD MMM YYYY'),
+                            requestor:data[i].user.name,
+                            jabatan:data[i].user.jabatan,
+                            kategori:data[i].category.nama_kategori,
+                            permintaan:data[i].category.nama_permintaan,
+                            atasan: data[i].atasan.name,
+                        })
+                    }
                 }
             }
-        } else {
+        } catch (error) {
             request_data.value = [];
-            for (let i = 0; i < listIncommingRequest.length; i++) {
-                const status_tiket = list_status.value.find(status => status.id === listIncommingRequest[i].status )
-                if (listIncommingRequest[i].status == 5 || listIncommingRequest[i].status == 4 || listIncommingRequest[i].status == 3) {
-                    request_data.value.push({
-                        id:listIncommingRequest[i].id, 
-                        nomor:listIncommingRequest[i].nomor,
-                        status:listIncommingRequest[i].status,
-                        tgl:listIncommingRequest[i].tgl,
-                        nama:listIncommingRequest[i].nama,
-                        jabatan:listIncommingRequest[i].jabatan,
-                        kategori:listIncommingRequest[i].kategori,
-                        keterangan: status_tiket ? status_tiket.name : '',
-                        color: status_tiket ? status_tiket.color : 'gray-900',
-                    })
-                }
-            }
+            console.log(error);
         }
     }
 
@@ -79,36 +119,36 @@
         // console.log(selectedRequest.value)
         loadMenu();
     };
-    const loadMenu = () => {  
-        if (selectedRequest.value.status == 3) {
-            menuModel.value= [
-                {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value)},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
-                {separator:true},
-                {label: 'Action', icon: 'pi pi-fw pi-play', command: () => {window.location.replace(`/action-request?id=${selectedRequest.value.id}`)}},
-            ]
-        } else if (selectedRequest.value.status == 5) {
+    const loadMenu = () => {
+        console.log(Number(payload.value.grade))
+        if (Number(payload.value.grade) > 2) {
             menuModel.value = [
-                {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value)},
+                {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
                 {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
-                {separator:true},
-                {label: 'Cancel', icon: 'pi pi-fw pi-times', command: () => {console.log('Cancel')}},
-                {label: 'Pending', icon: 'pi pi-fw pi-pause', command: () => {console.log('Pending')}},
-                {label: 'Done', icon: 'pi pi-fw pi-check', command: () => {console.log('Done')}},
-            ]
-        } if (selectedRequest.value.status == 3) {
-            menuModel.value = [
-                {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value)},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
-                {separator:true},
-                {label: 'Action', icon: 'pi pi-fw pi-play', command: () => {window.location.replace(`/action-request?id=${selectedRequest.value.id}`)}},
-                {label: 'Cancel', icon: 'pi pi-fw pi-times', command: () => {console.log('Cancel')}},
             ]
         } else {
-            menuModel.value = [
-                {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value)},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
-            ]
+            if (selectedRequest.value.status == 3) {
+                menuModel.value= [
+                    {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                    {separator:true},
+                    {label: 'Execute', icon: 'pi pi-fw pi-play', command: () => {detailData(selectedRequest.value, 'execute')}},
+                    {label: 'Reject', icon: 'pi pi-fw pi-times', command: () => detailData(selectedRequest.value, 'reject')},
+                ]
+            } else if (selectedRequest.value.status == 5) {
+                menuModel.value = [
+                    {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                    {separator:true},
+                    {label: 'Pending', icon: 'pi pi-fw pi-pause', command: () => detailData(selectedRequest.value, 'pending')},
+                    {label: 'Done', icon: 'pi pi-fw pi-check', command: () => detailData(selectedRequest.value, 'done')},
+                ]
+            } else {
+                menuModel.value = [
+                    {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                ]
+            }
         }
     }
 
@@ -120,20 +160,64 @@
     };
     initFilters();
 
-    const detailData = async(data) => {
+    const detailData = async(data, status) => {
         dialogs.value = true
-        titledialogs.value = data.nomor;
+        status_tiket.value = status
+        if (status === 'detail') {
+            titledialogs.value = `<span class="font-semibold">VIEW DETAIL</span> <i class="pi pi-angle-double-right mx-2 text-lg"></i> ${data.nomor}`;
+        } else if (status === 'execute') {
+            titledialogs.value = `<span class="font-semibold text-cyan-500">EXECUTE REQUEST</span> <i class="pi pi-angle-double-right mx-2 text-lg"></i> ${data.nomor}`;
+        } else if (status === 'pending') {
+            titledialogs.value = `<span class="font-semibold text-cyan-500">PENDING REQUEST</span> <i class="pi pi-angle-double-right mx-2 text-lg"></i> ${data.nomor}`;
+        } else if (status === 'done') {
+            titledialogs.value = `<span class="font-semibold text-green-500">DONE REQUEST</span> <i class="pi pi-angle-double-right mx-2 text-lg"></i> ${data.nomor}`;
+        } else {
+            titledialogs.value = `<span class="font-semibold text-red-500">DECLINE REQUEST</span> <i class="pi pi-angle-double-right mx-2 text-lg"></i> ${data.nomor}`;
+        }
+    }
+
+    const rowClass = (data) => {
+        return [ data.status == 5 ? 'bg-primary' : data.status == 6 ? 'text-green-500 font-semibold' : data.status == 4 ? 'text-orange-500 font-semibold' : data.status == 3 ? 'text-cyan-500 font-semibold' : data.status == 2 ? 'text-cyan-500 font-semibold' : data.status == 0 ? 'bg-red-500 text-white' : ''];
+    };
+
+    const actionDialog = (status) => {
+        if (status == 'execute') {
+            dialogs.value = false
+            toast.add({ severity: 'success', summary: 'Successfully', detail: `Execute Successfully`, life: 3000 });
+            load_data()
+        } else if (status == 'pending') {
+            dialogs.value = false
+            toast.add({ severity: 'success', summary: 'Successfully', detail: `Pending Successfully`, life: 3000 });
+            load_data()
+        } else if (status == 'done') {
+            dialogs.value = false
+            toast.add({ severity: 'success', summary: 'Successfully', detail: `Request Finished`, life: 3000 });
+            load_data()
+        } else if (status == 'reject') {
+            dialogs.value = false
+            toast.add({ severity: 'success', summary: 'Successfully', detail: `Request Rejected`, life: 3000 });
+            load_data()
+        } else if (status == 'warning') {
+            toast.add({ severity: 'warn', summary: 'Failed', detail: `Please data not empty !`, life: 3000 });
+        } else if (status == 'danger') {
+            dialogs.value = false
+            toast.add({ severity: 'danger', summary: 'Error', detail: `Please contact the IT team`, life: 3000 });
+        } else {
+            dialogs.value = false
+        }
     }
 
 </script>
 
 <template>
     <div class="grid align-items-center">
+        <Toast/>
         <Dialog v-model:visible="dialogs" :style="{ width: '1100px' }" :draggable="false" :modal="true">
             <template #header>
-                <h4 class="font-normal">VIEW DETAIL <i class="pi pi-angle-double-right mx-2 text-lg"></i> {{ titledialogs }}</h4>
+                <strong class="font-normal text-2xl" v-html="titledialogs"></strong>
             </template>
-            <detail-request :data_dialog="selectedRequest"/>
+            <detail-request :data_dialog="selectedRequest" v-if="status_tiket === 'detail'"/>
+            <actions-request :data_dialog="selectedRequest" :status_data="status_tiket" v-else @submit="actionDialog"/>
         </Dialog>
         <div class="col-12 md:col-12">
             <div class="flex align-items-center justify-content-end md:justify-content-between">
@@ -170,24 +254,25 @@
                 <Divider/>
                 <!-- <h6 class="text-center"> -- Not Found --</h6> -->
                 <ContextMenu ref="cm" :model="menuModel" />
-                <DataTable v-model:filters="filters" :value="request_data" contextMenu v-model:contextMenuSelection="selectedRequest" @rowContextmenu="onRowContextMenu" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20, 50]" tableStyle="min-width: 50rem">
-                    <template #empty> No customers found. </template>
-                    <Column field="nomor" header="Nomor" sortable>
+                <DataTable v-model:filters="filters" :value="request_data" :rowClass="rowClass" contextMenu v-model:contextMenuSelection="selectedRequest" @rowContextmenu="onRowContextMenu" paginator :rows="10" tableStyle="min-width: 50rem">
+                    <template #empty> <p class="text-center">Data not found.</p> </template>
+                    <Column field="nomor" header="No" sortable>
                         <template #body="{ data }">
                             <strong>{{ data.nomor }}</strong>
                         </template>
                     </Column>
-                    <Column field="tgl" header="Tanggal" sortable>
+                    <Column field="tgl" header="Date" sortable>
                         <template #body="{ data }">
-                            <strong>{{ moment(data.tgl).format('DD MMMM YYYY') }}</strong>
+                            <strong>{{ data.tgl }}</strong>
                         </template>
                     </Column>
-                    <Column field="nama" header="Nama"></Column>
-                    <Column field="jabatan" header="Jabatan"></Column>
-                    <Column field="kategori" header="Kategori"></Column>
-                    <Column field="keterangan" header="Keterangan">
+                    <Column field="requestor" header="Name"></Column>
+                    <Column field="jabatan" header="Position"></Column>
+                    <Column field="kategori" header="Category"></Column>
+                    <!-- <Column field="status" header="Status"></Column> -->
+                    <Column field="info" header="Info">
                         <template #body="{ data }">
-                            <strong :class="`text-${data.color}`">{{ data.keterangan }}</strong>
+                            <strong :class="`text-${data.color}`">{{ data.info }}</strong>
                         </template>
                     </Column>
                 </DataTable>

@@ -7,6 +7,7 @@ import { URL_WEB, URL_WEB_Portal } from '@/api/env';
 const router = useRouter();
 const route = useRoute();
 const time = ref(3000)
+const dept = ref('')
 
 const idUser = ref(null);
 const loadings = ref(true);
@@ -15,7 +16,7 @@ onMounted(() => {
     loadParams()
 });
 
-const loadParams = () => {
+const loadParams = async() => {
     const token = route.query.token;
     // const id_user = route.params.id;
     // console.log(id_user,token)
@@ -44,15 +45,25 @@ const loadParams = () => {
                         'Authorization': `Bearer ${token}`,
                     }
                 }
-                VerifyService.getUser(idUser.value,header).then(res => {
+                await VerifyService.getUser(idUser.value,header).then(res => {
                     const load = res.data;
                     const data = load.data;
                     let roles;
-                    if (data.department.department != 'ICT') {
+
+                    // Kondisi department menggunakan number atau string
+                    if (data.department !== null) {
+                        dept.value = data.department.department;
+                    } else {
+                        dept.value = data.divisi;
+                    }
+
+                    if (dept.value != 'ICT') {
                         roles = 'distributor';
                     } else {
                         roles = 'admin';
                     }
+
+
                     const pushdata = {
                         id :  idUser.value,
                         email : data.email,
@@ -83,6 +94,9 @@ const loadParams = () => {
     }
 }
 const parseJwt = (token) => {
+    // const base64Url = token.split('.')[1];
+    // const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    // const jsonPayload = atob(base64);
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {

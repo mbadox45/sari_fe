@@ -6,7 +6,7 @@ import AppSidebar from './AppSidebar.vue';
 import AppConfig from './AppConfig.vue';
 import { useLayout } from '@/layout/composables/layout';
 
-import {URL_WEB_Portal} from '@/api/DataVariable';
+import {URL_WEB_Portal} from '@/api/env';
 
 const { layoutConfig, layoutState, isSidebarActive } = useLayout();
 
@@ -65,28 +65,28 @@ const isOutsideClicked = (event) => {
 const tokenChecker = () => {
     const token = localStorage.getItem('usertoken');
     const roles = localStorage.getItem('roles');
-    if (roles != 'distributor') {
-        if (token) {
-            const tokenData = parseJwt(token);
-            const expirationTime = tokenData.exp * 1000; // Convert expiration time to milliseconds
-    
-            if (Date.now() > expirationTime) {
-                // Token has expired, remove it from localStorage
-                localStorage.removeItem('usertoken');
-                localStorage.removeItem('payload');
-                localStorage.removeItem('roles');
-                window.location.replace(URL_WEB_Portal);
-                // router.push('/auth/login');
-                console.log('expired');
-            } else {
-                console.log('Token activated');
-                console.log(token);
-                // config.headers['Authorization'] = `Bearer ${token}`;
-            }
+    if (token) {
+        const tokenData = parseJwt(token);
+        const expirationTime = tokenData.exp * 1000; // Convert expiration time to milliseconds
+
+        if (Date.now() > expirationTime) {
+            // Token has expired, remove it from localStorage
+            localStorage.removeItem('usertoken');
+            localStorage.removeItem('payload');
+            localStorage.removeItem('roles');
+            window.location.replace(URL_WEB_Portal);
+            // router.push('/auth/login');
+            console.log('expired');
+        } else {
+            console.log('Token activated');
+            console.log(token);
+            // config.headers['Authorization'] = `Bearer ${token}`;
         }
-    } else {
-        console.log(token);
     }
+    // if (roles != 'distributor') {
+    // } else {
+    //     console.log(token);
+    // }
 }
 
 const parseJwt = (token) => {

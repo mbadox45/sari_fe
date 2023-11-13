@@ -25,7 +25,7 @@ export default new class ProblemService{
     doneProblem(id,data){
         return http.post(`problem/done/${id}`, data);
     }
-    cancelProblem(id,data){
+    declineProblem(id,data){
         return http.post(`problem/decline-dept/${id}`, data);
     }
 }

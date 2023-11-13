@@ -21,6 +21,11 @@ export const listPrioritas = [
     { name: 'Menengah', prioritas: 2},
     { name: 'Tinggi', prioritas: 3},
 ];
+export const listAction = [
+    { name: 'Excute', aksi: 1},
+    { name: 'Pending', aksi: 2},
+    { name: 'Done', aksi: 3},
+];
 
 // Menu Pertanyaan
 export const settingPertanyaan = [
@@ -66,15 +71,20 @@ export const BreadcrumbHome =  { icon: 'pi pi-home', to: '/home' };
 export const listStatusRequest = [
     {status:'incoming', name:'Incoming'},
     {status:'done', name:'Done'},
+    {status:'reject', name:'Reject'},
 ]
 export const listStatus = [
-    {id:0, name:'Batal', color:'red-500'},
-    {id:1, name:'Menunggu Persetujuan Atasan Ybs.', color:'pink-500'},
+    {id:0, name:'Reject / Cancel', color:'red-500'},
+    {id:1, name:'Menunggu Persetujuan', color:'pink-500'},
     {id:2, name:'Menunggu Persetujuan Dalam Antrian', color:'indigo-500'},
     {id:3, name:'Sedang Dalam Antrian', color:'blue-500'},
     {id:4, name:'Pending', color:'orange-500'},
     {id:5, name:'Sedang Dalam Pengerjaan Tim', color:'cyan-500'},
     {id:6, name:'Selesai', color:'green-500'},
+]
+export const listStatusProblem = [
+    {id:0, name:'Cancel / Reject', color:'red-500'},
+    {id:1, name:'Waiting for a response from department of ', color:'pink-500'},
 ]
 
 // Data Menu
@@ -100,7 +110,7 @@ export const menu_ict_executor = [
                     },
                 ]
             },
-            { label: 'Problem IT', icon: 'pi pi-fw pi-exclamation-circle', 
+            { label: 'Problem', icon: 'pi pi-fw pi-exclamation-circle', 
                 items: [
                     {
                         label: 'All Problem',
@@ -139,12 +149,46 @@ export const menu_ict_approver = [
                     },
                 ]
             },
-            { label: 'Problem IT', icon: 'pi pi-fw pi-exclamation-circle', 
+            { label: 'Problem', icon: 'pi pi-fw pi-exclamation-circle', 
                 items: [
                     {
-                        label: 'All Problem',
+                        label: 'Incoming Problem',
                         icon: 'pi pi-fw pi-exclamation-triangle',
                         to: '/problem'
+                    },
+                ]
+            },
+        ]
+    },
+];
+export const menu_approver_after_grade_3 = [
+    {
+        label: 'Home',
+        items: [{ label: 'Home', icon: 'pi pi-fw pi-home', to: '/home' }]
+    },
+    {
+        label: 'Main Menu',
+        items: [
+            { label: 'Request', icon: 'pi pi-fw pi-book', 
+                items: [
+                    {
+                        label: 'My Request',
+                        icon: 'pi pi-fw pi-ticket',
+                        to: '/my-request'
+                    },
+                    {
+                        label: 'Approval',
+                        icon: 'pi pi-fw pi-check',
+                        to: '/approve-request'
+                    },
+                ]
+            },
+            { label: 'Problem', icon: 'pi pi-fw pi-exclamation-circle', 
+                items: [
+                    {
+                        label: 'My Problem',
+                        icon: 'pi pi-fw pi-info',
+                        to: '/my-problem'
                     },
                 ]
             },
@@ -173,7 +217,7 @@ export const menu_user_requester = [
                     },
                 ]
             },
-            { label: 'Problem IT', icon: 'pi pi-fw pi-exclamation-circle', 
+            { label: 'Problem', icon: 'pi pi-fw pi-exclamation-circle', 
                 items: [
                     {
                         label: 'My Problem',
@@ -212,7 +256,7 @@ export const menu_user_approver = [
                     },
                 ]
             },
-            { label: 'Problem IT', icon: 'pi pi-fw pi-exclamation-circle', 
+            { label: 'Problem', icon: 'pi pi-fw pi-exclamation-circle', 
                 items: [
                     {
                         label: 'My Problem',

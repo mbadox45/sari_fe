@@ -4,17 +4,21 @@
     import { useToast } from 'primevue/usetoast';
 
     import moment from 'moment';
-
+    
     // const date_now = moment(new Date()).format('yyyy-mm-dd');
-
+    
     // API
+    import {URL_API} from '@/api/env';
     import {listIncommingRequest, listStatusRequest, listStatus} from '@/api/DataVariable';
+    import RequestService from '@/api/RequestService.js';
+
 
     // Component
     import DetailRequest from './components/DetailRequest.vue';
     import AtasanRequest from './components/AtasanRequest.vue';
     import DeclineRequest from './components/DeclineRequest.vue';
 
+    const payload = ref(JSON.parse(localStorage.getItem('payload')));
     const request_data = ref([])
     const dialogs = ref(false)
     const titledialogs = ref('')
@@ -36,22 +40,57 @@
     }
 
     const load_data = async() => {
-        request_data.value = [];
-        for (let i = 0; i < listIncommingRequest.length; i++) {
-            const status_tiket = list_status.value.find(a => a.id === listIncommingRequest[i].status )
-            if (listIncommingRequest[i].status == 2) {
-                request_data.value.push({
-                    id:listIncommingRequest[i].id, 
-                    nomor:listIncommingRequest[i].nomor,
-                    status:listIncommingRequest[i].status,
-                    tgl:listIncommingRequest[i].tgl,
-                    nama:listIncommingRequest[i].nama,
-                    jabatan:listIncommingRequest[i].jabatan,
-                    kategori:listIncommingRequest[i].kategori,
-                    keterangan: status_tiket ? status_tiket.name : '',
-                    color: status_tiket ? status_tiket.color : 'gray-900',
-                })
+        try {
+            request_data.value = [];
+            let response;
+            if (Number(payload.value.grade) > 3) {
+                response = await RequestService.getRequestAtasan();
+                const load = response.data;
+                const data = load.data;
+                for (let i = 0; i < data.length; i++) {
+                    const status = Number(data[i].status);
+                    if (status === 1) {
+                        request_data.value.push({
+                            id : data[i].id,
+                            nomor : data[i].no_wo,
+                            requestor : data[i].user.name,
+                            jabatan : data[i].user.jabatan,
+                            nohp : data[i].user.noHP,
+                            tgl : moment(data[i].created_at).format('DD MMM YYYY'),
+                            keperluan: data[i].keperluan,
+                            kategori: data[i].category.nama_kategori,
+                            permintaan: data[i].category.nama_permintaan,
+                            keterangan: data[i].info,
+                            status: Number(data[i].status),
+                        })
+                    }
+                }
+            } else {
+                response = await RequestService.getRequestDept();
+                const load = response.data;
+                const data = load.data;
+                for (let i = 0; i < data.length; i++) {
+                    const status = Number(data[i].status);
+                    if (status === 2) {
+                        request_data.value.push({
+                            id : data[i].id,
+                            nomor : data[i].no_wo,
+                            requestor : data[i].user.name,
+                            jabatan : data[i].user.jabatan,
+                            nohp : data[i].user.noHP,
+                            tgl : moment(data[i].created_at).format('DD MMM YYYY'),
+                            keperluan: data[i].keperluan,
+                            kategori: data[i].category.nama_kategori,
+                            permintaan: data[i].category.nama_permintaan,
+                            keterangan: data[i].info,
+                            status: Number(data[i].status),
+                        })
+                    }
+                }
             }
+
+        } catch (error) {
+            request_data.value = [];
         }
     }
 
@@ -64,10 +103,36 @@
     const loadMenu = () => {
         menuModel.value = [
             {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-            {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+            {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {
+                // Define your authorization token
+                const authToken = localStorage.getItem('usertoken');
+
+                // Create a new XMLHttpRequest object
+                const xhr = new XMLHttpRequest();
+
+                // Configure the request
+                xhr.open('GET', `${URL_API}request/${selectedRequest.value.id}/pdf`, true);
+
+                // Set the authorization header
+                xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+
+                // Handle the response when the request is complete
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        // Request was successful, open a new tab or window with the URL
+                        window.open(`${URL_API}request/${selectedRequest.value.id}/pdf`);
+                    } else {
+                        console.error('Request failed with status:', xhr.status);
+                    }
+                };
+
+                // Send the request
+                xhr.send();
+                // window.open(`${URL_API}${selectedRequest.value.id}/pdf`)
+            }},
             {separator:true},
             {label: 'Approve', icon: 'pi pi-fw pi-check', command: () => detailData(selectedRequest.value, 'approve')},
-            {label: 'Cancel', icon: 'pi pi-fw pi-times', command: () => detailData(selectedRequest.value, 'cancel')},
+            {label: 'Decline', icon: 'pi pi-fw pi-times', command: () => detailData(selectedRequest.value, 'decline')},
         ]
     }
 
@@ -94,7 +159,13 @@
     const actionDialog = (status) => {
         if (status == 'save') {
             dialogs.value = false
-            toast.add({ severity: 'success', summary: 'Successfully', detail: `Data saved successfully`, life: 3000 });
+            toast.add({ severity: 'success', summary: 'Successfully', detail: `Request approved`, life: 3000 });
+            load_data()
+        } else if (status == 'warning') {
+            toast.add({ severity: 'warn', summary: 'Failed', detail: `Please input priority`, life: 3000 });
+        } else if (status == 'danger') {
+            dialogs.value = false
+            toast.add({ severity: 'danger', summary: 'Error', detail: `Please contact the IT team`, life: 3000 });
         } else {
             dialogs.value = false
         }
@@ -107,11 +178,14 @@
         <Toast/>
         <Dialog v-model:visible="dialogs" :style="{ width: statusRequest === 'detail' ? '1100px' : '700px'}" :draggable="false" :modal="true">
             <template #header>
-                <h4 class="font-normal" v-html="titledialogs"></h4>
+                <strong class="font-normal text-2xl" v-html="titledialogs"></strong>
             </template>
             <detail-request :data_dialog="selectedRequest" v-show="statusRequest === 'detail'"/>
-            <atasan-request v-show="statusRequest === 'approve'" @submit="actionDialog"/>
-            <decline-request v-show="statusRequest === 'cancel'" @submit="actionDialog"/>
+            <atasan-request :data_dialog="selectedRequest" v-show="statusRequest === 'approve'" @submit="actionDialog"/>
+            <decline-request :data_dialog="selectedRequest" v-show="statusRequest === 'decline'" @submit="actionDialog"/>
+            <div>
+
+            </div>
         </Dialog>
         <div class="col-12 md:col-12">
             <div class="flex align-items-center justify-content-end md:justify-content-between">
@@ -141,7 +215,7 @@
                 <!-- <h6 class="text-center"> -- Not Found --</h6> -->
                 <ContextMenu ref="cm" :model="menuModel" />
                 <DataTable v-model:filters="filters" :value="request_data" contextMenu v-model:contextMenuSelection="selectedRequest" @rowContextmenu="onRowContextMenu" paginator :rows="5" :rowsPerPageOptions="[5, 10, 20, 50]" tableStyle="min-width: 50rem">
-                    <template #empty> No customers found. </template>
+                    <template #empty> <p class="text-center">Data not found.</p> </template>
                     <Column field="nomor" header="Nomor" sortable>
                         <template #body="{ data }">
                             <strong>{{ data.nomor }}</strong>
@@ -152,12 +226,12 @@
                             <strong>{{ moment(data.tgl).format('DD MMMM YYYY') }}</strong>
                         </template>
                     </Column>
-                    <Column field="nama" header="Nama"></Column>
+                    <Column field="requestor" header="Nama"></Column>
                     <Column field="jabatan" header="Jabatan"></Column>
                     <Column field="kategori" header="Kategori"></Column>
-                    <Column field="keterangan" header="Keterangan">
+                    <Column field="keperluan" header="Keterangan">
                         <template #body="{ data }">
-                            <strong :class="`text-${data.color}`">{{ data.keterangan }}</strong>
+                            {{ data.keperluan }}
                         </template>
                     </Column>
                 </DataTable>
