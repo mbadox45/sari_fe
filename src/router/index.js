@@ -97,6 +97,16 @@ const router = createRouter({
             ]
         },
         {
+            path: '/print/:id',
+            name: 'print',
+            component: () => import('@/views/sari/request/PrintsRequest.vue'),
+            meta:{
+                requiresAuth: true,
+                admin:true,
+                distributor:true,
+            }
+        },
+        {
             path: '/sign-out',
             name: 'signout',
             component: () => import('@/views/sari/signin/SignOut.vue'),

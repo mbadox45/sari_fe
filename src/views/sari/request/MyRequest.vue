@@ -7,13 +7,13 @@
     // API
     import RequestService from '@/api/RequestService.js';
     import {listStatus} from '@/api/DataVariable.js';
+    import { URL_WEB } from '@/api/env';
 
     
     // Component
     import DetailRequest from './components/DetailRequest.vue';
     import DeclineRequest from './components/DeclineRequest.vue';
     import FormsRequest from './components/FormsRequest.vue';
-    import PrintRequest from './components/PrintRequest.vue';
 
     const router = useRouter();
 
@@ -92,12 +92,12 @@
         if (selectedRequest.value.status > 3) {
             menuModel.value = [
                 {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => detailData(selectedRequest.value, 'print')},
+                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
             ]
         } else {
             menuModel.value = [
                 {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => detailData(selectedRequest.value, 'print')},
+                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
                 {separator:true},
                 {label: 'Edit', icon: 'pi pi-fw pi-pencil', command: () => detailData(selectedRequest.value, 'edit')},
                 {label: 'Cancel', icon: 'pi pi-fw pi-times', command: () => detailData(selectedRequest.value, 'cancel')},
@@ -157,7 +157,6 @@
             </template>
             <detail-request :data_dialog="selectedRequest" v-if="statusRequest === 'detail'"/>
             <decline-request :data_dialog="selectedRequest" :status="statusRequest" v-else-if="statusRequest === 'cancel'" @submit="actionDialog"/>
-            <print-request :data_dialog="selectedRequest" v-else-if="statusRequest === 'print'"/>
             <forms-request :data_dialog="selectedRequest" :status="statusRequest" v-else @submit="actionDialog"/>
         </Dialog>
         <div class="col-12 md:col-12">

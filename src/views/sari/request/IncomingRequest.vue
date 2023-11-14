@@ -10,6 +10,7 @@
     // API
     import {listIncommingRequest, listStatusRequest, listStatus} from '@/api/DataVariable';
     import RequestService from '@/api/RequestService.js';
+    import { URL_WEB } from '@/api/env';
 
     // Component
     import DetailRequest from './components/DetailRequest.vue';
@@ -124,13 +125,13 @@
         if (Number(payload.value.grade) > 2) {
             menuModel.value = [
                 {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
             ]
         } else {
             if (selectedRequest.value.status == 3) {
                 menuModel.value= [
                     {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
                     {separator:true},
                     {label: 'Execute', icon: 'pi pi-fw pi-play', command: () => {detailData(selectedRequest.value, 'execute')}},
                     {label: 'Reject', icon: 'pi pi-fw pi-times', command: () => detailData(selectedRequest.value, 'reject')},
@@ -138,7 +139,7 @@
             } else if (selectedRequest.value.status == 5) {
                 menuModel.value = [
                     {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
                     {separator:true},
                     {label: 'Pending', icon: 'pi pi-fw pi-pause', command: () => detailData(selectedRequest.value, 'pending')},
                     {label: 'Done', icon: 'pi pi-fw pi-check', command: () => detailData(selectedRequest.value, 'done')},
@@ -146,7 +147,7 @@
             } else {
                 menuModel.value = [
                     {label: 'View', icon: 'pi pi-fw pi-search', command: () => detailData(selectedRequest.value, 'detail')},
-                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(`http://36.92.181.10:8083/foreman/cetak_form_request/${selectedRequest.value.id}`)}},
+                    {label: 'Print', icon: 'pi pi-fw pi-print', command: () => {window.open(URL_WEB+'print/'+selectedRequest.value.id)}},
                 ]
             }
         }
