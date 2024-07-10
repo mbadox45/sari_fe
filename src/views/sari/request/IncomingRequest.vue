@@ -13,11 +13,13 @@
     import { URL_WEB } from '@/api/env';
 
     // Component
+    import CategoryRequest from './components/CategoryRequest.vue';
     import DetailRequest from './components/DetailRequest.vue';
     import ActionsRequest from './components/ActionsRequest.vue';
 
     const request_data = ref([])
     const dialogs = ref(false)
+    const visible = ref(false)
     const titledialogs = ref('')
     const cm = ref();
     const list_status = ref(listStatus);
@@ -245,16 +247,28 @@
                             <Dropdown v-model="statusRequest" :options="listStatusRequest" optionValue="status" optionLabel="name" placeholder="Select a Status" @change="load_data" />
                         </div>
                     </div>
-                    <div class="col-12 md:col-4  p-fluid">
+                    <div class="col-12 md:col-3 p-fluid">
                         <span class="p-input-icon-left">
                             <i class="pi pi-search" />
                             <InputText v-model="filters['global'].value" placeholder="Search" class="w-full"/>
                         </span>
                     </div>
+                    <div class="col-12 md:col-1 flex justify-content-end">
+                        <Button icon="pi pi-cog text-xl" severity="info" @click="visible = true" v-tooltip.bottom="'Category'"/>
+                    </div>
                 </div>
                 <Divider/>
                 <!-- <h6 class="text-center"> -- Not Found --</h6> -->
                 <ContextMenu ref="cm" :model="menuModel" />
+                <Dialog v-model:visible="visible" modal header="Edit Profile" :style="{ width: '30rem' }">
+                    <template #header>
+                        <div class="inline-flex align-items-center justify-content-center gap-2">
+                            <span class="font-bold white-space-nowrap">My Category</span>
+                        </div>
+                    </template>
+                    <span class="p-text-secondary block mb-5">Update category your Department.</span>
+                    <category-request/>
+                </Dialog>
                 <DataTable v-model:filters="filters" :value="request_data" :rowClass="rowClass" contextMenu v-model:contextMenuSelection="selectedRequest" @rowContextmenu="onRowContextMenu" paginator :rows="10" tableStyle="min-width: 50rem">
                     <template #empty> <p class="text-center">Data not found.</p> </template>
                     <Column field="nomor" header="No" sortable>
